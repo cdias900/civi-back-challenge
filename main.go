@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -17,7 +18,7 @@ func main() {
 	// Get environment variables
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalln("error loading .env file")
+		fmt.Printf("error loading .env file")
 	}
 
 	// Initialize services
