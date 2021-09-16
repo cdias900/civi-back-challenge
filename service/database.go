@@ -14,7 +14,7 @@ import (
 type DBService interface {
 	Connect(ctx context.Context, atlasURI string) error
 	CreateDocument(ctx context.Context, collection string, input interface{}) error
-	ReadDocuments(ctx context.Context, collection string, filter bson.M, limit int64, skip int64) (output []*interface{}, err error)
+	ReadDocuments(ctx context.Context, collection string, filter bson.M, limit int64, skip int64) (cursor *mongo.Cursor, err error)
 	ReadDocument(ctx context.Context, collection string, filter bson.M) (output interface{}, err error)
 	ReplaceDocument(ctx context.Context, collection string, filter bson.M, input interface{}) error
 }
@@ -80,27 +80,12 @@ func (dbS *dbService) CreateDocument(ctx context.Context, collection string, inp
 }
 
 // Read many documents
-func (dbS *dbService) ReadDocuments(ctx context.Context, collection string, filter bson.M, limit int64, skip int64) (output []*interface{}, err error) {
+func (dbS *dbService) ReadDocuments(ctx context.Context, collection string, filter bson.M, limit int64, skip int64) (cursor *mongo.Cursor, err error) {
 	mainDatabase := dbS.client.Database("main")
 	specificCollection := mainDatabase.Collection(collection)
 
 	cur, err := specificCollection.Find(ctx, filter, &options.FindOptions{Limit: &limit, Skip: &skip})
-	if err != nil {
-		return nil, err
-	}
-
-	for cur.Next(context.TODO()) {
-		// Create a value into which the single document can be decoded
-		var elem interface{}
-		err := cur.Decode(&elem)
-		if err != nil {
-			log.Println("couldn't decode document:", err)
-			return nil, err
-		}
-
-		output = append(output, &elem)
-	}
-	return output, nil
+	return cur, err
 }
 
 // Read document

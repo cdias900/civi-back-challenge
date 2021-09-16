@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cdias900/civi-back-challenge/model"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Message service
@@ -25,11 +24,11 @@ func NewMessageService() MessageService {
 	return &messageService{}
 }
 
-// Generate random uint64
-func generateUint64() uint64 {
-	buf := make([]byte, 8)
+// Generate random uint32
+func generateUint32() uint32 {
+	buf := make([]byte, 4)
 	rand.Read(buf)
-	return binary.LittleEndian.Uint64(buf)
+	return binary.LittleEndian.Uint32(buf)
 }
 
 // Constants
@@ -40,8 +39,8 @@ const (
 // Send message
 func (mS *messageService) Send(ctx context.Context, dbS DBService, msg model.MessageContent) (*model.Message, error) {
 	m := model.Message{
-		ID:        generateUint64(),
-		Timestamp: primitive.Timestamp{T: uint32(time.Now().Unix())},
+		ID:        generateUint32(),
+		Timestamp: uint32(time.Now().Unix()),
 		Content:   msg,
 	}
 	err := dbS.CreateDocument(ctx, "messages", m)
@@ -54,17 +53,24 @@ func (mS *messageService) Send(ctx context.Context, dbS DBService, msg model.Mes
 }
 
 // Read messages
-func (mS *messageService) Read(ctx context.Context, dbS DBService, page int64) ([]model.Message, error) {
-	docs, err := dbS.ReadDocuments(ctx, "messages", nil, page*MESSAGES_PER_PAGE, page)
+func (mS *messageService) Read(ctx context.Context, dbS DBService, page int64) (output []model.Message, err error) {
+	cur, err := dbS.ReadDocuments(ctx, "messages", nil, page*MESSAGES_PER_PAGE, page)
 	if err != nil {
 		log.Println("couldn't read message documents from database:", err)
 		return nil, err
 	}
 
-	msgs := make([]model.Message, len(docs))
-	for i, msg := range docs {
-		msgs[i] = (*msg).(model.Message)
+	msgs := make([]model.Message, 0)
+	for cur.Next(context.TODO()) {
+		// Create a value into which the single document can be decoded
+		msg := model.Message{}
+		err := cur.Decode(&msg)
+		if err != nil {
+			log.Println("couldn't decode document:", err)
+			return nil, err
+		}
+		// Append
+		msgs = append(msgs, msg)
 	}
-
 	return msgs, nil
 }
