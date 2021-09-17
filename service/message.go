@@ -54,7 +54,7 @@ func (mS *messageService) Send(ctx context.Context, dbS DBService, msg model.Mes
 
 // Read messages
 func (mS *messageService) Read(ctx context.Context, dbS DBService, page int64) (output []model.Message, err error) {
-	cur, err := dbS.ReadDocuments(ctx, "messages", nil, page*MESSAGES_PER_PAGE, page)
+	cur, err := dbS.ReadDocuments(ctx, "messages", nil, MESSAGES_PER_PAGE, page*MESSAGES_PER_PAGE)
 	if err != nil {
 		log.Println("couldn't read message documents from database:", err)
 		return nil, err
