@@ -84,7 +84,7 @@ func (dbS *dbService) ReadDocuments(ctx context.Context, collection string, filt
 	mainDatabase := dbS.client.Database("main")
 	specificCollection := mainDatabase.Collection(collection)
 
-	cur, err := specificCollection.Find(ctx, filter, &options.FindOptions{Limit: &limit, Skip: &skip})
+	cur, err := specificCollection.Find(ctx, filter, &options.FindOptions{Limit: &limit, Skip: &skip, Sort: bson.D{{Key: "timestamp", Value: -1}}})
 	return cur, err
 }
 
